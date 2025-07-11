@@ -14,6 +14,10 @@ import xml.etree.ElementTree as ET
 def FindCategory(operation):
     for e in CategoryMatchingTableSpozywcze:   
         if e in operation['description']: return "Spożywcze"
+    for e in CategoryMatchingTablePodroze:   
+        if e in operation['description']: return "Podróże"
+    for e in CategoryMatchingTableUbrania:   
+        if e in operation['description']: return "Ubrania"
     for e in CategoryMatchingTableKawiarnieLody:   
         if e in operation['description']: return "KawiarnieLody"
     for e in CategoryMatchingTableJedzeniePozaDomem:   
@@ -38,21 +42,28 @@ CategoryList = [
     "Zdrowie",
     "Drogerie",
     "Dzieci",    
-    "Dzieci-Ubrania",
-    "Dzieci-Zabawki",
-    "Dzieci-ZajęciaDodatkowe"
 ]
 
 CategoryMatchingTableSpozywcze = [
-    "GROMULSKI", "BIEDRONKA", "SOKOLOW-NET", "ZABKA", "TRUSKAWKI", "PUTKA", "OSKROBA", "PIEKARNIA", "LUBASZKA", "Carrefour", "Stacja Ordona", "GRUSZKA BEZ FARTUSZK", "MECHANICZNA POMARANCZA"
+    "GROMULSKI", "BIEDRONKA", "SOKOLOW-NET", "ZABKA", "TRUSKAWKI", "PUTKA", "OSKROBA", "PIEKARNIA", "LUBASZKA", "Lubaszka", "Carrefour", "Stacja Ordona", "GRUSZKA BEZ FARTUSZK", "MECHANICZNA POMARANCZA", "Warzywozercy", 
+    "DELIKATESY MIESNE"
+]
+
+CategoryMatchingTablePodroze = [
+    "skycash.com", "Urbancard", "CAMPING"
+
+]
+
+CategoryMatchingTableUbrania = [
+    "KappAhl", "ZARA"
 ]
 
 CategoryMatchingTableKawiarnieLody = [
-    "COSTA", "Smietankowe Cafe", "Al Passo", "LODOVA"
+    "COSTA", "Smietankowe Cafe", "Al Passo", "LODOVA", "LODOMANIA"
 ]
 
 CategoryMatchingTableJedzeniePozaDomem = [
-    "BAR MLECZNY", "BEACH BAR", "SLIMAK", "KUFLOTEKA"
+    "BAR MLECZNY", "BEACH BAR", "SLIMAK", "KUFLOTEKA", "BISTRO WIEM", "CAMPING TUMIANY RESTAU", "FOLWARK"
 ]
 
 CategoryMatchingTableZdrowie = [
@@ -83,7 +94,7 @@ for operation in root.findall('.//operation'):
     date = operation.find('order-date').text
     type = operation.find('type').text
     if type in ['Obciążenie', "Płatność web - kod mobilny", "Płatność kartą" ]:
-        amount = operation.find('amount').text
+        amount = float(operation.find('amount').text[1:])
         saldo = operation.find('ending-balance').text
         description = operation.find('description').text
         if "Adres : " in description:
@@ -116,5 +127,9 @@ for row in NotAnalyzedCategories:
 
 for category in CategoryList:
     print("\n\nZakupy w kategorii:", category)
+    sum = 0
     for row in table:
-        if row['category'] == category : print("DATA:", row['date'], "KWOTA:", row['amount'], "TYP:", row['type'], "KRÓTKI OPIS:", row['descriptionShort'])
+        if row['category'] == category : 
+            print("DATA:", row['date'], "KWOTA:", row['amount'], "TYP:", row['type'], "KRÓTKI OPIS:", row['descriptionShort'])
+            sum = sum + row['amount']
+    print("Sum:", sum, "PLN")
