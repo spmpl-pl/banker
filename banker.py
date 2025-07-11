@@ -9,7 +9,11 @@
 import json
 import argparse
 import xml.etree.ElementTree as ET
-import pandas as pd
+
+
+def FindCategory(operation):
+    return {'category': 'unknown'}
+
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description='Import the account history in XML format and categorize the entries')
@@ -20,20 +24,22 @@ args = parser.parse_args()
 tree = ET.parse(args.xml_file)
 root = tree.getroot()
 
-# Extract data
+# Process the data
 table = []
-for operation in root.findall('operations'):
+for operation in root.findall('.//operation'):
+    categorization = FindCategory(operation)
     entry = {
         'date': operation.find('order-date').text,
         'type': operation.find('type').text,
-        'description': operation.find('description').text,
         'amount': operation.find('amount').text,
-        'saldo': operation.find('ending-balance').text
+        'category': categorization['category'],
+        'saldo': operation.find('ending-balance').text,
+        'description': operation.find('description').text
     }
     table.append(entry)
 
-# Convert to DataFrame
-df = pd.DataFrame(table)
 
-# Print table
-print(df)
+
+for row in table:
+    print(row)
+    print()
