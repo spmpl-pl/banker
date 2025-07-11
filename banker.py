@@ -28,7 +28,10 @@ def FindCategory(operation):
         if e in operation['description']: return "Drogerie"   
     for e in CategoryMatchingTableDzieci:   
         if e in operation['description']: return "Dzieci"   
-
+    for e in CategoryMatchingTableSportIHobby:   
+        if e in operation['description']: return "SportIHobby"  
+    for e in CategoryMatchingTableeCommerce:   
+        if e in operation['description']: return "eCommerce"  
     return "Unknown"
 
 CategoryList = [
@@ -41,7 +44,15 @@ CategoryList = [
     "JedzeniePozaDomem",
     "Zdrowie",
     "Drogerie",
-    "Dzieci",    
+    "Dzieci",
+    "SportIHobby",
+    "eCommerce"    
+]
+
+CategoryList2 = [
+    ["Spożywcze", [ "GROMULSKI", "BIEDRONKA", "SOKOLOW-NET", "ZABKA", "TRUSKAWKI", "PUTKA", "OSKROBA", "PIEKARNIA", "LUBASZKA", "Lubaszka", "Carrefour", "Stacja Ordona", "GRUSZKA BEZ FARTUSZK", "MECHANICZNA POMARANCZA", "Warzywozercy", 
+    "DELIKATESY MIESNE" ]],
+    "Podróże",
 ]
 
 CategoryMatchingTableSpozywcze = [
@@ -50,16 +61,16 @@ CategoryMatchingTableSpozywcze = [
 ]
 
 CategoryMatchingTablePodroze = [
-    "skycash.com", "Urbancard", "CAMPING"
+    "skycash.com", "Urbancard", "CAMPING", "intercity", "SZYNDZIELNI"
 
 ]
 
 CategoryMatchingTableUbrania = [
-    "KappAhl", "ZARA"
+    "KappAhl", "ZARA", "zara.com"
 ]
 
 CategoryMatchingTableKawiarnieLody = [
-    "COSTA", "Smietankowe Cafe", "Al Passo", "LODOVA", "LODOMANIA"
+    "COSTA", "Smietankowe Cafe", "Al Passo", "LODOVA", "LODOMANIA", "SLODKIE CIOCIE", "POLISH LODY", "ALL GOOD S.A."
 ]
 
 CategoryMatchingTableJedzeniePozaDomem = [
@@ -71,12 +82,21 @@ CategoryMatchingTableZdrowie = [
 ]
 
 CategoryMatchingTableDzieci = [
-    "EMPIK", "SMYK", "IBEX", "PEPCO"
+    "EMPIK", "SMYK", "IBEX", "PEPCO", "dePapel", "patataj-kanie"
 ]
 
 CategoryMatchingTableDrogerie = [
     "HEBE", "ROSSMANN", "rossmann.pl"
 ]
+CategoryMatchingTableSportIHobby = [
+    "OSIR", "Osrodek Moczydlo", "PLYWALNIA MIEJSKA"
+]
+CategoryMatchingTableeCommerce = [
+    "inpost.pl", "allegro.pl"
+]
+
+
+
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description='Import the account history in XML format and categorize the entries')
@@ -118,6 +138,9 @@ for operation in root.findall('.//operation'):
         if type not in NotAnalyzedCategories:
             NotAnalyzedCategories.append(type)
 
+table.sort(key=lambda row: row['date'])
+
+
 print("Not Analyzed categories:")
 for row in NotAnalyzedCategories:
     print (" -", row)
@@ -130,6 +153,6 @@ for category in CategoryList:
     sum = 0
     for row in table:
         if row['category'] == category : 
-            print("DATA:", row['date'], "KWOTA:", row['amount'], "TYP:", row['type'], "KRÓTKI OPIS:", row['descriptionShort'])
+            print("   ",row['date']," | ", f"{row['amount']:8.2f}", " | ", f"{row['type']:<30}", " | ", f"{row['descriptionShort']:<30}", " |")
             sum = sum + row['amount']
-    print("Sum:", sum, "PLN")
+    print("Sum:", f"{sum:7.2f}", "PLN")
