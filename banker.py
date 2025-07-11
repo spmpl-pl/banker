@@ -16,6 +16,8 @@ def FindCategory(operation):
         if e in operation['description']: return "Spożywcze"
     for e in CategoryMatchingTableKawiarnieLody:   
         if e in operation['description']: return "KawiarnieLody"
+    for e in CategoryMatchingTableJedzeniePozaDomem:   
+        if e in operation['description']: return "JedzeniePozaDomem"  
     for e in CategoryMatchingTableZdrowie:   
         if e in operation['description']: return "Zdrowie"   
     for e in CategoryMatchingTableDrogerie:   
@@ -23,40 +25,46 @@ def FindCategory(operation):
     for e in CategoryMatchingTableDzieci:   
         if e in operation['description']: return "Dzieci"   
 
-    return 0
+    return "Unknown"
+
 CategoryList = [
-    {"id": 0, "name": "Unknown"},
-    {"id": 1, "name": "Spożywcze"},
-    {"id": 2, "name": "Podróże"},
-    {"id": 3, "name": "Ubrania"},
-    {"id": 4, "name": "Dom"},
-    {"id": 5, "name": "KawiarnieLody"},
-    {"id": 6, "name": "Zdrowie"},
-    {"id": 7, "name": "Drogerie"},
-    {"id": 8, "name": "Dzieci"},    
-    {"id": 31, "name": "Dzieci-Ubrania"},
-    {"id": 32, "name": "Dzieci-Zabawki"},
-    {"id": 33, "name": "Dzieci-ZajęciaDodatkowe"}
+    "Unknown", 
+    "Spożywcze",
+    "Podróże",
+    "Ubrania",
+    "Dom",
+    "KawiarnieLody",
+    "JedzeniePozaDomem",
+    "Zdrowie",
+    "Drogerie",
+    "Dzieci",    
+    "Dzieci-Ubrania",
+    "Dzieci-Zabawki",
+    "Dzieci-ZajęciaDodatkowe"
 ]
 
 CategoryMatchingTableSpozywcze = [
-    "GROMULSKI", "BIEDRONKA", "SOKOLOW-NET", "ZABKA", "TRUSKAWKI", "PUTKA", "OSKROBA", "PIEKARNIA", "LUBASZKA", "Carrefour"
+    "GROMULSKI", "BIEDRONKA", "SOKOLOW-NET", "ZABKA", "TRUSKAWKI", "PUTKA", "OSKROBA", "PIEKARNIA", "LUBASZKA", "Carrefour", "Stacja Ordona", "GRUSZKA BEZ FARTUSZK", "MECHANICZNA POMARANCZA"
 ]
 
 CategoryMatchingTableKawiarnieLody = [
-    "COSTA", "Smietankowe Cafe", "KUFLOTEKA"
+    "COSTA", "Smietankowe Cafe", "Al Passo", "LODOVA"
+]
+
+CategoryMatchingTableJedzeniePozaDomem = [
+    "BAR MLECZNY", "BEACH BAR", "SLIMAK", "KUFLOTEKA"
 ]
 
 CategoryMatchingTableZdrowie = [
-    "APTEKA"
+    "APTEKA", "Apteka"
 ]
 
 CategoryMatchingTableDzieci = [
-    "EMPIK", "SMYK"
+    "EMPIK", "SMYK", "IBEX", "PEPCO"
 ]
 
 CategoryMatchingTableDrogerie = [
-    "HEBE", "ROSSMANN"
+    "HEBE", "ROSSMANN", "rossmann.pl"
 ]
 
 # Set up argument parser
@@ -70,20 +78,43 @@ root = tree.getroot()
 
 # Process the data
 table = []
+NotAnalyzedCategories = []
 for operation in root.findall('.//operation'):
-    entry = {
-        'date': operation.find('order-date').text,
-        'type': operation.find('type').text,
-        'amount': operation.find('amount').text,
-        'category': 0,
-        'saldo': operation.find('ending-balance').text,
-        'description': operation.find('description').text
-    }
-    entry['category'] = FindCategory(entry)
-    table.append(entry)
+    date = operation.find('order-date').text
+    type = operation.find('type').text
+    if type in ['Obciążenie', "Płatność web - kod mobilny", "Płatność kartą" ]:
+        amount = operation.find('amount').text
+        saldo = operation.find('ending-balance').text
+        description = operation.find('description').text
+        if "Adres : " in description:
+            descriptionShort = description.split("Adres : ")[1].split(" Miasto :")[0].split(" 'Operacja :")[0].strip()
+        else:   
+            descriptionShort = ""
+
+
+        entry = {
+            'date': date,
+            'type': type,
+            'amount': amount,
+            'category': 0,
+            'saldo': saldo,
+            'description': description,
+            'descriptionShort': descriptionShort
+        }
+        entry['category'] = FindCategory(entry)
+        table.append(entry)
+    else:
+        if type not in NotAnalyzedCategories:
+            NotAnalyzedCategories.append(type)
+
+print("Not Analyzed categories:")
+for row in NotAnalyzedCategories:
+    print (" -", row)
 
 
 
-for row in table:
-    if row['category'] == 0 : print(row)
-    print()
+
+for category in CategoryList:
+    print("\n\nZakupy w kategorii:", category)
+    for row in table:
+        if row['category'] == category : print("DATA:", row['date'], "KWOTA:", row['amount'], "TYP:", row['type'], "KRÓTKI OPIS:", row['descriptionShort'])
