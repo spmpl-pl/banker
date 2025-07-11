@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 def FindCategory(operation):
     return {'category': 'unknown'}
 
+#categories: Spożywcze, Dzieci-Ubrania, Dzieci-Zabawki, Dzieci-ZajęciaDodatkowe, Podróże, Ubrania, Dom, KawiarnieLody, Zdrowie, 
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description='Import the account history in XML format and categorize the entries')
