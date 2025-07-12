@@ -15,7 +15,7 @@ def FindCategory(operation):
     for c in CategoryList:
         #print(c[1])
         for e in c[1]:   
-            if e in operation['description']: return c[0] 
+            if e.lower() in operation['description'].lower(): return c[0] 
     return "Inne"
 
 
@@ -24,37 +24,44 @@ CategoryList = [
 
     ["Spożywcze", 
         [ "GROMULSKI", "BIEDRONKA", "SOKOLOW-NET", "ZABKA", "TRUSKAWKI", "PUTKA", "OSKROBA", "PIEKARNIA", "LUBASZKA", "Lubaszka", "Carrefour", "Stacja Ordona", "GRUSZKA BEZ FARTUSZK", "MECHANICZNA POMARANCZA", "Warzywozercy", 
-    "DELIKATESY MIESNE" ]],
+    "DELIKATESY MIESNE", "LIDL", "KAUFLAND", "Stokrotka", "Hala Wola", "Arcypiekarz", "Auchan", "Galeria wypiekow", "Wesola Pani", "Spozywczy", "kawa365",
+    "Delikatesy", "PRZYSTANEK SMAKOW", "go4taste.pl", "WSS Spolem" ]],
     
     ["Podróże", 
-        ["skycash.com", "Urbancard", "CAMPING", "intercity", "SZYNDZIELNI", "STACJA PALIW", "ORLEN", "PARKOMAT", "MPK KRAKOW"]],
+        ["skycash.com", "Urbancard", "CAMPING", "intercity", "SZYNDZIELNI", "STACJA PALIW", "ORLEN", "PARKOMAT", "MPK KRAKOW", "Kolej Linowa"]],
 
     ["Ubrania",
-        ["KappAhl", "ZARA", "zara.com", "ODZIEZ"]],
+        ["KappAhl", "ZARA", "zara.com", "ODZIEZ", "Rylko", "intimissimi", "TK Maxx", "Carry", "C & A", "Reserved", "CALZEDONIA", "sportano.pl", "MANGO WARSAW",
+         "borsetka.pl", "marsala-butik.pl", "HM Miasto", "lanea.com.pl", "zalamo" ]],
     
     ["KawiarnieLody",
-        ["COSTA", "Smietankowe Cafe", "Al Passo", "LODOVA", "LODOMANIA", "SLODKIE CIOCIE", "POLISH LODY", "ALL GOOD S.A.", "CAFE", "COFFEE"]],
+        ["COSTA", "Smietankowe Cafe", "Al Passo", "LODOVA", "LODOMANIA", "SLODKIE CIOCIE", "POLISH LODY", "ALL GOOD S.A.", "CAFE", "COFFEE", "Caffe",
+         "Cukiernia", "Stolica Lodow", "Stacja Lody", "Slodka Buda", "Kawiarnia", "PROCHOWNIA ZOLIBORZ" ]],
 
     ["JedzeniePozaDomem",
-        ["BAR MLECZNY", "BEACH BAR", "SLIMAK", "KUFLOTEKA", "BISTRO WIEM", "CAMPING TUMIANY RESTAU", "FOLWARK", "POD BRYKAJACYM KUCYKIE"]],
+        ["BAR MLECZNY", "BEACH BAR", "SLIMAK", "KUFLOTEKA", "BISTRO WIEM", "CAMPING TUMIANY RESTAU", "FOLWARK", "POD BRYKAJACYM KUCYKIE", "Bufet", "Mleczarnia",
+         "McDonald", "Restauracja", "Bar Centralny", "Grill", "Ciacho", "Pierogarnia", "Bistro", "Pizzeria", "Nalesnikarnia", "Kebab", "KOLANKO NO 6",
+           "Bar Zabkowsk"  ]],
 
     ["Zdrowie",
-        ["APTEKA", "Apteka"]],
+        ["APTEKA", "Apteka", "SUPER - PHARM", "Dental Gallery"]],
 
     ["Drogerie",
         ["HEBE", "ROSSMANN", "rossmann.pl"]],
 
     ["SportIHobby",
-        ["OSIR", "Osrodek Moczydlo", "PLYWALNIA MIEJSKA", "SAMOCHODY FILMOWE", "kicket.com", "DFZ  SP ZOO"]],
+        ["OSIR", "Osrodek Moczydlo", "PLYWALNIA MIEJSKA", "SAMOCHODY FILMOWE", "kicket.com", "DFZ  SP ZOO", "Kross", "Decathlon", "Stolica Ruchu"]],
 
     ["DomIOgród",
-        ["Action", "temu.com"]],
+        ["Action", "temu.com", "Castorama", "IKEA", "MediaExpert", "EURO-NET", "KWIACIARNIA GARDENIA"]],
 
     ["Dzieci",
-        ["EMPIK", "SMYK", "IBEX", "PEPCO", "dePapel", "patataj-kanie"]],
+        ["EMPIK", "SMYK", "IBEX", "PEPCO", "dePapel", "patataj-kanie", "Haircut", "Relay", "Ksiegarnie", "Ksiegarnia", "Mybasic", "airo.fun", "pstro.com.pl",
+         "TuSzyte", "Szkola Narciarska", "bossobuty.pl", "Sklep Kupklocki.pl", "zalando", "aniakruk.pl", 
+          ]],
 
     ["eCommerce",
-        ["inpost.pl", "allegro.pl", "gopay.cz"]],
+        ["inpost.pl", "allegro.pl", "gopay.cz", "vinted", "Selmo", ]],
 
     ["WypłatyZBankomatów", ["XXXXXXXXXXXXXXXXXXX"]],
 
@@ -109,7 +116,9 @@ for operation in root.findall('.//operation'):
             if type[:7] == "Wypłata": entry['category'] = "WypłatyZBankomatów"
             elif type[:7] == "Przelew": 
                 entry['category'] = "Przelewy"
-                entry['descriptionShort'] = description.split("Nazwa odbiorcy :  ")[1]
+                if "Nazwa odbiorcy :  " in description: entry['descriptionShort'] = description.split("Nazwa odbiorcy :  ")[1]
+                else: descriptionShort = description
+
             else: entry['category'] = FindCategory(entry)
             table.append(entry)
     else:
