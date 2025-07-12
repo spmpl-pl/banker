@@ -6,7 +6,7 @@
 ##  Author: Bartosz Chmielewski                                                                    ##
 #####################################################################################################
 #####################################################################################################
-import json
+import re
 import argparse
 import xml.etree.ElementTree as ET
 
@@ -46,18 +46,18 @@ CategoryList = [
     ["Zdrowie",
         ["APTEKA", "Apteka", "SUPER - PHARM", "Dental Gallery"]],
 
-    ["Drogerie",
-        ["HEBE", "ROSSMANN", "rossmann.pl"]],
+    ["KosmetykiIUroda",
+        ["HEBE", "ROSSMANN", "rossmann.pl", "ANIA KRUK", "aniakruk.pl"]],
 
     ["SportIHobby",
         ["OSIR", "Osrodek Moczydlo", "PLYWALNIA MIEJSKA", "SAMOCHODY FILMOWE", "kicket.com", "DFZ  SP ZOO", "Kross", "Decathlon", "Stolica Ruchu"]],
 
     ["DomIOgród",
-        ["Action", "temu.com", "Castorama", "IKEA", "MediaExpert", "EURO-NET", "KWIACIARNIA GARDENIA"]],
+        ["Action", "PEPCO", "temu.com", "Castorama", "IKEA", "MediaExpert", "EURO-NET", "KWIACIARNIA GARDENIA"]],
 
     ["Dzieci",
-        ["EMPIK", "SMYK", "IBEX", "PEPCO", "dePapel", "patataj-kanie", "Haircut", "Relay", "Ksiegarnie", "Ksiegarnia", "Mybasic", "airo.fun", "pstro.com.pl",
-         "TuSzyte", "Szkola Narciarska", "bossobuty.pl", "Sklep Kupklocki.pl", "zalando", "aniakruk.pl", 
+        ["EMPIK", "SMYK", "IBEX", "dePapel", "patataj-kanie", "Haircut", "Relay", "Ksiegarnie", "Ksiegarnia", "Mybasic", "airo.fun", "pstro.com.pl",
+         "TuSzyte", "Szkola Narciarska", "bossobuty.pl", "Sklep Kupklocki.pl", "zalando", 
           ]],
 
     ["eCommerce",
@@ -87,46 +87,69 @@ tree = ET.parse(args.xml_file)
 root = tree.getroot()
 
 # Process the data
-table = []
+TabelaObciezen = []
+TabelaUznan = []
 NotAnalyzedCategories = []
+
 for operation in root.findall('.//operation'):
     date = operation.find('order-date').text
     type = operation.find('type').text
-    if type in ['Obciążenie', "Płatność web - kod mobilny", "Płatność kartą", "Wypłata w bankomacie - kod mobilny", "Wypłata z bankomatu", "Przelew na telefon przychodz. zew.", "Przelew na telefon przychodz. wew.", "Przelew z rachunku", "Zagraniczna płatność zbliżeniowa BLIKIEM" ]:
-        if operation.find('amount').text[0] == "-":
-            amount = float(operation.find('amount').text[1:])
-            saldo = operation.find('ending-balance').text
-            description = operation.find('description').text
-            if "Adres : " in description:
-                descriptionShort = description.split("Adres : ")[1].split(" Kraj :")[0].split(" 'Operacja :")[0].strip()
-            else:   
-                descriptionShort = description
+
+    if True:
+        amount = float(operation.find('amount').text[1:])
+        saldo = operation.find('ending-balance').text
+        description = operation.find('description').text
+        if "Adres : " in description:
+            descriptionShort = description.split("Adres : ")[1].split(" Kraj :")[0].split(" 'Operacja :")[0].strip()
+        else:   
+            descriptionShort = description
 
 
-            entry = {
-                'date': date,
-                'type': type,
-                'amount': amount,
-                'category': 0,
-                'saldo': saldo,
-                'description': description,
-                'descriptionShort': descriptionShort
-            }
+        entry = {
+            'date': date,
+            'type': type,
+            'amount': amount,
+            'category': 0,
+            'saldo': saldo,
+            'description': description,
+            'descriptionShort': descriptionShort,
+            'title': ""
+        }
             
-            if type[:7] == "Wypłata": entry['category'] = "WypłatyZBankomatów"
-            elif type[:7] == "Przelew": 
-                entry['category'] = "Przelewy"
-                if "Nazwa odbiorcy :  " in description: entry['descriptionShort'] = description.split("Nazwa odbiorcy :  ")[1]
-                else: descriptionShort = description
+        if type[:7] == "Wypłata": entry['category'] = "WypłatyZBankomatów"
+        elif type[:7] == "Przelew": 
+            entry['category'] = "Przelewy"
+            if "Nazwa odbiorcy :  " in description: entry['descriptionShort'] = description.split("Nazwa odbiorcy :  ")[1]
+            elif "Nazwa nadawcy :  " in description: 
+                #Sender = ""
+                #Title = ""
 
-            else: entry['category'] = FindCategory(entry)
-            table.append(entry)
+                match = re.search(r"Nazwa nadawcy\s*:\s*(.*?)\s*Adres nadawcy", description)
+                if match: entry['descriptionShort'] = match.group(1)
+
+                entry['descriptionShort'] = description.split("Nazwa nadawcy :  ")[1]
+                entry['title'] = ""
+                match = re.search(r"Tytuł\s*:\s*(.+)", description)
+                if match: entry['title'] = match.group(1).split("Referencje własne")[0]
+
+            else: descriptionShort = description
+
+        else: entry['category'] = FindCategory(entry)
+        
+        if operation.find('amount').text[0] == "-":
+            TabelaObciezen.append(entry)
+        else:
+            if entry['amount'] != 3500 and entry['amount'] != 3900 and entry['amount'] != 1600:
+                TabelaUznan.append(entry)
+        
+
+
     else:
         if type not in NotAnalyzedCategories:
             NotAnalyzedCategories.append(type)
         #print("  ===   ", type, float(operation.find('amount').text),  operation.find('description').text)
 
-table.sort(key=lambda row: row['date'])
+TabelaObciezen.sort(key=lambda row: row['date'])
 
 
 if verbose:
@@ -140,12 +163,21 @@ SumTotal = 0
 for category in CategoryList:
     if verbose: print("\n\nZakupy w kategorii:", category[0])
     CategorySums[category[0]] = 0
-    for row in table:
+    for row in TabelaObciezen:
         if row['category'] == category[0] : 
             if verbose: print("   ",row['date']," | ", f"{row['amount']:8.2f}", " | ", f"{row['type']:<40}", " | ", f"{row['descriptionShort'][:48]:<50}", " |")
             CategorySums[category[0]] = CategorySums[category[0]] + row['amount']
     if verbose: print("Sum:", f"{CategorySums[category[0]]:7.2f}", "PLN")
     SumTotal = SumTotal + CategorySums[category[0]]
+
+if verbose: print("\n\nWpływy na konto:")
+
+SumUznania = 0
+for row in TabelaUznan:
+    if verbose: print("   ",row['date']," | ", f"{row['amount']:8.2f}", " | ", f"{row['type']:<35}", " | ", f"{row['descriptionShort'][:28]:<29}", " | ", f"{row['title'][:28]:<29}", " |")
+    SumUznania = SumUznania + row['amount']
+if verbose: print("Sum:", f"{SumUznania:7.2f}", "PLN")
+
 
 
 print("\nKategorie wydatków:")
@@ -153,3 +185,4 @@ for category, value in CategorySums.items():
     print("  ", f"{category:<20}" + ":",  f"{value:8.2f}", "PLN")
 
 print("\nSuma wszystkich wydatków:", f"{SumTotal:8.2f}", "PLN")
+print("Suma wpływów poza wypłatą:", f"{SumUznania:8.2f}", "PLN" )
